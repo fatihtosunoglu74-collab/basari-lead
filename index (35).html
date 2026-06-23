@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Başarı Otomotiv — Lead Yönetim</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --navy: #1B2A4A;
+            --gold: #C8962E;
+            --bg: #F5F6F8;
+            --white: #FFFFFF;
+            --text: #1F2937;
+            --text-light: #6B7280;
+            --border: #E5E7EB;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ─── Header ─── */
+        .header {
+            background: var(--navy);
+            color: white;
+            padding: 0 24px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--gold);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-brand { font-size: 13px; font-weight: 700; letter-spacing: 0.8px; }
+        .header-brand span { color: var(--gold); }
+        .header-right { display: flex; gap: 12px; align-items: center; }
+        .header-count { font-size: 12px; color: #9CA3AF; }
+
+        /* ─── Config Bar ─── */
+        .config-bar {
+            background: #FFFBEB;
+            border-bottom: 1px solid #FCD34D;
+            padding: 10px 24px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .config-bar.hidden { display: none; }
+        .config-bar input {
+            padding: 5px 10px;
+            border: 1px solid #FCD34D;
+            border-radius: 5px;
+            font-size: 12px;
+            width: 380px;
+            font-family: monospace;
+        }
+        .key-reset {
+            font-size: 11px;
+            color: var(--text-light);
+            cursor: pointer;
+            text-decoration: underline;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        /* ─── Main ─── */
+        .main { padding: 20px 24px; max-width: 1440px; margin: 0 auto; }
+
+        /* ─── KPI Grid ─── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .kpi-card {
+            background: white;
+            border-radius: 8px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .kpi-card:hover { border-color: var(--gold); }
+        .kpi-card.active { border-color: var(--navy); border-width: 2px; }
+        .kpi-label { font-size: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+        .kpi-value { font-size: 26px; font-weight: 800; color: var(--navy); }
+
+        /* ─── Toolbar ─── */
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .toolbar input, .toolbar select {
+            padding: 7px 11px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+            color: var(--text);
+            outline: none;
+        }
+        .toolbar input:focus, .toolbar select:focus { border-color: var(--navy); }
+        .toolbar input { width: 220px; }
+        .toolbar-spacer { flex: 1; }
+
+        /* ─── Buttons ─── */
+        .btn {
+            padding: 7px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.15s;
+            white-space: nowrap;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-navy { background: var(--navy); color: white; }
+        .btn-gold { background: var(--gold); color: white; }
+        .btn-ghost { background: white; color: var(--text); border: 1px solid var(--border); }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+        .btn-danger { background: #FEE2E2; color: #991B1B; }
+
+        /* ─── Table ─── */
+        .table-wrapper {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow: auto;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead th {
+            background: var(--navy);
+            color: white;
+            padding: 9px 13px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; }
+        tbody tr:hover { background: #F9FAFB; }
+        tbody tr:last-child { border-bottom: none; }
+        td { padding: 9px 13px; font-size: 13px; vertical-align: middle; }
+        .td-firma { font-weight: 600; color: var(--navy); }
+        .td-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+        .td-light { color: var(--text-light); font-size: 12px; }
+
+        /* ─── Badges ─── */
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .b-yeni             { background:#DBEAFE; color:#1D4ED8; }
+        .b-iletisim_kuruldu { background:#FEF3C7; color:#92400E; }
+        .b-ilgili           { background:#D1FAE5; color:#065F46; }
+        .b-evrak_bekleniyor { background:#FFEDD5; color:#9A3412; }
+        .b-findeks_bekleniyor{ background:#EDE9FE; color:#5B21B6; }
+        .b-cari_acildi      { background:#D1FAE5; color:#065F46; border:1px solid #6EE7B7; }
+        .b-red              { background:#FEE2E2; color:#991B1B; }
+
+        /* ─── Modal ─── */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 500;
+            align-items: center;
+            justify-content: center;
+        }
+        .overlay.active { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 10px;
+            padding: 24px;
+            width: 580px;
+            max-height: 92vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+            border-bottom: 2px solid var(--gold);
+        }
+        .modal-title { font-size: 15px; font-weight: 700; color: var(--navy); }
+        .modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-light); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .fg { display: flex; flex-direction: column; gap: 4px; }
+        .fg.full { grid-column: 1 / -1; }
+        .fg label { font-size: 11px; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.3px; }
+        .fg input, .fg select, .fg textarea {
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text);
+            background: white;
+            outline: none;
+        }
+        .fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--navy); }
+        .fg textarea { height: 72px; resize: vertical; font-family: inherit; }
+        .modal-footer {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ─── Detail Panel ─── */
+        .detail-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 400;
+        }
+        .detail-overlay.active { display: block; }
+        .detail-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.3);
+        }
+        .detail-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 400px;
+            background: white;
+            overflow-y: auto;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+            padding: 20px;
+        }
+        .detail-header {
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .detail-firma { font-size: 15px; font-weight: 700; color: var(--navy); }
+        .detail-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-light); }
+        .detail-row { display: flex; flex-direction: column; gap: 3px; margin-bottom: 12px; }
+        .detail-row label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); font-weight: 600; }
+        .detail-row span { font-size: 13px; color: var(--text); }
+        .detail-row span.empty { color: var(--text-light); font-style: italic; }
+        .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+        .detail-status { margin-bottom: 14px; }
+        .status-options { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .status-btn {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            opacity: 0.6;
+        }
+        .status-btn.active { opacity: 1; border-color: rgba(0,0,0,0.2); }
+
+        /* ─── Loading / Empty ─── */
+        .state-row td { text-align: center; padding: 50px 20px; color: var(--text-light); }
+        .state-icon { font-size: 36px; margin-bottom: 10px; }
+        .state-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+
+        /* ─── Toast ─── */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--navy);
+            color: white;
+            padding: 11px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            border-left: 4px solid var(--gold);
+            opacity: 0;
+            transform: translateY(8px);
+            transition: all 0.25s;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+<!-- ═══ Header ═══ -->
+<div class="header">
+    <div class="header-brand">BAŞARI OTOMOTİV <span>|</span> Lead Yönetim Sistemi</div>
+    <div class="header-right">
+        <span class="header-count" id="headerCount"></span>
+        <button class="btn btn-ghost btn-sm" onclick="loadLeads()">↻</button>
+        <button class="btn btn-gold" onclick="openAddModal()">+ Yeni Lead</button>
+    </div>
+</div>
+
+<!-- ═══ Config Bar ═══ -->
+<div class="config-bar" id="configBar">
+    <span>⚠️ Supabase Legacy Anon Key girin <strong>(eyJ... ile başlamalı)</strong>:</span>
+    <input type="text" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+    <button class="btn btn-navy btn-sm" onclick="connectDB()">Bağlan</button>
+</div>
+<div style="background:#F0FDF4; border-bottom:1px solid #BBF7D0; padding:6px 24px; font-size:12px; color:#166534;" id="connectedBar" style="display:none">
+    ✓ Bağlı — <button class="key-reset" onclick="resetKey()">Anahtarı değiştir</button>
+</div>
+
+<!-- ═══ Main ═══ -->
+<div class="main">
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <div class="kpi-card" onclick="filterByStatus('')" id="kpi-toplam">
+            <div class="kpi-label">Toplam Lead</div>
+            <div class="kpi-value" id="kv-toplam">—</div>
+        </div>
+        <div class="kpi-card" onclick="filterByStatus('yeni')">
+            <div class="kpi-label">Yeni</div>
+            <div class="kpi-value" id="kv-yeni" style="color:#1D4ED8">—</div>
+        </div>
+        <div class="kpi-card" onclick="filterByStatus('iletisim_kuruldu')">
+            <div class="kpi-label">İletişim Kuruldu</div>
+            <div class="kpi-value" id="kv-iletisim" style="color:#92400E">—</div>
+        </div>
+        <div class="kpi-card" onclick="filterByStatus('ilgili')">
+            <div class="kpi-label">İlgili</div>
+            <div class="kpi-value" id="kv-ilgili" style="color:#065F46">—</div>
+        </div>
+        <div class="kpi-card" onclick="filterByStatus('evrak_bekleniyor')">
+            <div class="kpi-label">Evrak / Findeks</div>
+            <div class="kpi-value" id="kv-evrak" style="color:#9A3412">—</div>
+        </div>
+        <div class="kpi-card" onclick="filterByStatus('cari_acildi')">
+            <div class="kpi-label">Cari Açıldı</div>
+            <div class="kpi-value" id="kv-cari" style="color:#059669">—</div>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <input type="text" id="searchQ" placeholder="Firma, telefon, yetkili ara..." oninput="applyFilters()">
+        <select id="fDurum" onchange="applyFilters()">
+            <option value="">Tüm Durumlar</option>
+            <option value="yeni">Yeni</option>
+            <option value="iletisim_kuruldu">İletişim Kuruldu</option>
+            <option value="ilgili">İlgili</option>
+            <option value="evrak_bekleniyor">Evrak Bekleniyor</option>
+            <option value="findeks_bekleniyor">Findeks Bekleniyor</option>
+            <option value="cari_acildi">Cari Açıldı</option>
+            <option value="red">Red</option>
+        </select>
+        <select id="fIlce" onchange="applyFilters()">
+            <option value="">Tüm İlçeler</option>
+        </select>
+        <select id="fSanayi" onchange="applyFilters()">
+            <option value="">Tüm Sanayiler</option>
+        </select>
+        <div class="toolbar-spacer"></div>
+        <span id="filterInfo" style="font-size:12px; color:var(--text-light);"></span>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Firma Adı</th>
+                    <th>İlçe / Sanayi</th>
+                    <th>Telefon</th>
+                    <th>E-posta</th>
+                    <th>Aksam</th>
+                    <th>Durum</th>
+                    <th>Kaynak</th>
+                    <th>Tarih</th>
+                </tr>
+            </thead>
+            <tbody id="leadsBody">
+                <tr class="state-row"><td colspan="9">
+                    <div class="state-icon">⏳</div>
+                    <div class="state-title">Supabase bağlantısı bekleniyor</div>
+                </td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- ═══ Add/Edit Modal ═══ -->
+<div class="overlay" id="addModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title" id="modalTitle">Yeni Lead Ekle</div>
+            <button class="modal-close" onclick="closeModal('addModal')">✕</button>
+        </div>
+
+        <div class="form-grid">
+            <div class="fg full">
+                <label>Firma Adı *</label>
+                <input id="mFirma" type="text" placeholder="Örnek: Ankara Oto Kaporta Ltd.">
+            </div>
+            <div class="fg">
+                <label>Yetkili Kişi</label>
+                <input id="mYetkili" type="text" placeholder="Ad Soyad">
+            </div>
+            <div class="fg">
+                <label>Telefon</label>
+                <input id="mTelefon" type="tel" placeholder="0312 xxx xx xx">
+            </div>
+            <div class="fg">
+                <label>E-posta</label>
+                <input id="mEmail" type="email" placeholder="info@firma.com">
+            </div>
+            <div class="fg">
+                <label>WhatsApp</label>
+                <input id="mWA" type="tel" placeholder="0533 xxx xx xx">
+            </div>
+            <div class="fg">
+                <label>İlçe</label>
+                <input id="mIlce" type="text" placeholder="Sincan, Etimesgut...">
+            </div>
+            <div class="fg">
+                <label>Sanayi Sitesi</label>
+                <input id="mSanayi" type="text" placeholder="OSTİM, İvedik...">
+            </div>
+            <div class="fg">
+                <label>Web Sitesi</label>
+                <input id="mWeb" type="text" placeholder="www.firma.com">
+            </div>
+            <div class="fg">
+                <label>Aksam Grubu</label>
+                <select id="mAksam">
+                    <option value="kaporta">Kaporta</option>
+                    <option value="mekanik">Mekanik</option>
+                    <option value="aydinlatma">Aydınlatma</option>
+                    <option value="radyator">Radyatör</option>
+                    <option value="diger">Diğer</option>
+                </select>
+            </div>
+            <div class="fg">
+                <label>Durum</label>
+                <select id="mDurum">
+                    <option value="yeni">Yeni</option>
+                    <option value="iletisim_kuruldu">İletişim Kuruldu</option>
+                    <option value="ilgili">İlgili</option>
+                    <option value="evrak_bekleniyor">Evrak Bekleniyor</option>
+                    <option value="findeks_bekleniyor">Findeks Bekleniyor</option>
+                    <option value="cari_acildi">Cari Açıldı</option>
+                    <option value="red">Red</option>
+                </select>
+            </div>
+            <div class="fg">
+                <label>Kaynak</label>
+                <select id="mKaynak">
+                    <option value="google_places">Google Places</option>
+                    <option value="manuel">Manuel</option>
+                    <option value="referans">Referans</option>
+                </select>
+            </div>
+            <div class="fg full">
+                <label>Adres</label>
+                <input id="mAdres" type="text" placeholder="Tam adres">
+            </div>
+            <div class="fg full">
+                <label>Notlar</label>
+                <textarea id="mNotlar" placeholder="Görüşme notu, hatırlatma..."></textarea>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('addModal')">İptal</button>
+            <button class="btn btn-navy" onclick="saveLead()">Kaydet</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Detail Panel ═══ -->
+<div class="detail-overlay" id="detailOverlay">
+    <div class="detail-backdrop" onclick="closeDetail()"></div>
+    <div class="detail-panel" id="detailPanel"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────
+const SB_URL = 'https://dqoreukmpkxmdputjigy.supabase.co';
+const LS_KEY = 'basari_lead_key_v2';
+let sb = null;
+let allLeads = [];
+let editingId = null;
+
+const durumMap = {
+    yeni:               { label: 'Yeni',               badge: 'b-yeni' },
+    iletisim_kuruldu:   { label: 'İletişim Kuruldu',   badge: 'b-iletisim_kuruldu' },
+    ilgili:             { label: 'İlgili',              badge: 'b-ilgili' },
+    evrak_bekleniyor:   { label: 'Evrak Bekleniyor',   badge: 'b-evrak_bekleniyor' },
+    findeks_bekleniyor: { label: 'Findeks Bekleniyor', badge: 'b-findeks_bekleniyor' },
+    cari_acildi:        { label: 'Cari Açıldı',        badge: 'b-cari_acildi' },
+    red:                { label: 'Red',                 badge: 'b-red' }
+};
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved && saved.startsWith('eyJ')) {
+        document.getElementById('sbKey').value = saved;
+        connectDB(true);
+    }
+});
+
+function connectDB(silent = false) {
+    const key = document.getElementById('sbKey').value.trim();
+    if (!key) { toast('Anon Key boş'); return; }
+    if (!key.startsWith('eyJ')) {
+        toast('❌ Yanlış key formatı — eyJ... ile başlamalı. Legacy sekmesinden alın.');
+        return;
+    }
+    sb = window.supabase.createClient(SB_URL, key);
+    localStorage.setItem(LS_KEY, key);
+    document.getElementById('configBar').classList.add('hidden');
+    document.getElementById('connectedBar').style.display = 'block';
+    if (!silent) toast('Bağlandı ✓');
+    loadLeads();
+}
+
+function resetKey() {
+    localStorage.removeItem(LS_KEY);
+    sb = null;
+    document.getElementById('configBar').classList.remove('hidden');
+    document.getElementById('connectedBar').style.display = 'none';
+    document.getElementById('sbKey').value = '';
+}
+
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+async function loadLeads() {
+    if (!sb) return;
+    renderLoading();
+    const { data, error } = await sb.from('leads').select('*').order('created_at', { ascending: false });
+    if (error) { toast('Hata: ' + error.message); return; }
+    allLeads = data || [];
+    updateKPI();
+    populateFilters();
+    applyFilters();
+    document.getElementById('headerCount').textContent = allLeads.length + ' kayıt';
+}
+
+function updateKPI() {
+    const c = (s) => allLeads.filter(l => l.durum === s).length;
+    document.getElementById('kv-toplam').textContent  = allLeads.length;
+    document.getElementById('kv-yeni').textContent    = c('yeni');
+    document.getElementById('kv-iletisim').textContent= c('iletisim_kuruldu');
+    document.getElementById('kv-ilgili').textContent  = c('ilgili');
+    document.getElementById('kv-evrak').textContent   = c('evrak_bekleniyor') + c('findeks_bekleniyor');
+    document.getElementById('kv-cari').textContent    = c('cari_acildi');
+}
+
+function populateFilters() {
+    const ilceler  = [...new Set(allLeads.map(l => l.ilce).filter(Boolean))].sort();
+    const sanayiler= [...new Set(allLeads.map(l => l.sanayi_sitesi).filter(Boolean))].sort();
+    rebuildSelect('fIlce',   ilceler,   'Tüm İlçeler');
+    rebuildSelect('fSanayi', sanayiler, 'Tüm Sanayiler');
+}
+
+function rebuildSelect(id, values, placeholder) {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">${placeholder}</option>`;
+    values.forEach(v => sel.innerHTML += `<option value="${v}"${v===cur?' selected':''}>${v}</option>`);
+}
+
+function applyFilters() {
+    const q      = document.getElementById('searchQ').value.toLowerCase();
+    const durum  = document.getElementById('fDurum').value;
+    const ilce   = document.getElementById('fIlce').value;
+    const sanayi = document.getElementById('fSanayi').value;
+
+    const result = allLeads.filter(l => {
+        const mQ = !q || [l.firma_adi,l.yetkili_kisi,l.telefon,l.email].some(v => v && v.toLowerCase().includes(q));
+        const mD = !durum  || l.durum === durum;
+        const mI = !ilce   || l.ilce  === ilce;
+        const mS = !sanayi || l.sanayi_sitesi === sanayi;
+        return mQ && mD && mI && mS;
+    });
+
+    document.getElementById('filterInfo').textContent = result.length !== allLeads.length
+        ? `${result.length} / ${allLeads.length} gösteriliyor` : '';
+    renderTable(result);
+}
+
+function filterByStatus(s) {
+    document.getElementById('fDurum').value = s;
+    applyFilters();
+}
+
+// ─────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────
+function renderLoading() {
+    document.getElementById('leadsBody').innerHTML = `
+        <tr class="state-row"><td colspan="9">
+            <div class="state-icon">⏳</div>
+            <div class="state-title">Yükleniyor...</div>
+        </td></tr>`;
+}
+
+function renderTable(leads) {
+    const tbody = document.getElementById('leadsBody');
+    if (!leads.length) {
+        tbody.innerHTML = `
+            <tr class="state-row"><td colspan="9">
+                <div class="state-icon">🔍</div>
+                <div class="state-title">Henüz lead yok</div>
+                <div style="font-size:13px">+ Yeni Lead butonuyla ekleyin veya n8n ile otomatik doldurun</div>
+            </td></tr>`;
+        return;
+    }
+    tbody.innerHTML = leads.map((l, i) => {
+        const d = durumMap[l.durum] || { label: l.durum, badge: '' };
+        const tarih = new Date(l.created_at).toLocaleDateString('tr-TR', {day:'2-digit',month:'2-digit',year:'2-digit'});
+        const kaynakLabel = { google_places:'Google', manuel:'Manuel', referans:'Referans' }[l.kaynak] || l.kaynak;
+        return `<tr onclick="openDetail('${l.id}')">
+            <td class="td-light">${i+1}</td>
+            <td>
+                <div class="td-firma">${l.firma_adi||'—'}</div>
+                ${l.yetkili_kisi ? `<div class="td-sub">${l.yetkili_kisi}</div>` : ''}
+            </td>
+            <td>
+                <div class="td-light">${l.ilce||'—'}</div>
+                ${l.sanayi_sitesi ? `<div class="td-sub">${l.sanayi_sitesi}</div>` : ''}
+            </td>
+            <td class="td-light">${l.telefon||'—'}</td>
+            <td class="td-light">${l.email||'—'}</td>
+            <td class="td-light">${l.aksam_grubu||'—'}</td>
+            <td><span class="badge ${d.badge}">${d.label}</span></td>
+            <td class="td-light">${kaynakLabel}</td>
+            <td class="td-light">${tarih}</td>
+        </tr>`;
+    }).join('');
+}
+
+// ─────────────────────────────────────────────
+// DETAIL PANEL
+// ─────────────────────────────────────────────
+function openDetail(id) {
+    const l = allLeads.find(x => x.id === id);
+    if (!l) return;
+    const d = durumMap[l.durum] || { label: l.durum, badge: '' };
+    const tarih = new Date(l.created_at).toLocaleDateString('tr-TR', {day:'2-digit',month:'2-digit',year:'2-digit'});
+
+    const statusButtons = Object.entries(durumMap).map(([val, cfg]) =>
+        `<button class="status-btn badge ${cfg.badge}${val===l.durum?' active':''}"
+            onclick="updateStatus('${l.id}','${val}',event)">${cfg.label}</button>`
+    ).join('');
+
+    document.getElementById('detailPanel').innerHTML = `
+        <div class="detail-header">
+            <div>
+                <div class="detail-firma">${l.firma_adi}</div>
+                <div style="margin-top:4px"><span class="badge ${d.badge}">${d.label}</span></div>
+            </div>
+            <button class="detail-close" onclick="closeDetail()">✕</button>
+        </div>
+
+        <div class="detail-status">
+            <div style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Durumu Güncelle</div>
+            <div class="status-options">${statusButtons}</div>
+        </div>
+
+        <div class="detail-row"><label>Yetkili</label><span ${!l.yetkili_kisi?'class="empty"':''}>${l.yetkili_kisi||'Girilmemiş'}</span></div>
+        <div class="detail-row"><label>Telefon</label><span ${!l.telefon?'class="empty"':''}>${l.telefon||'Girilmemiş'}</span></div>
+        <div class="detail-row"><label>E-posta</label><span ${!l.email?'class="empty"':''}>${l.email||'Girilmemiş'}</span></div>
+        <div class="detail-row"><label>WhatsApp</label><span ${!l.whatsapp?'class="empty"':''}>${l.whatsapp||'Girilmemiş'}</span></div>
+        <div class="detail-row"><label>Web Sitesi</label><span ${!l.website?'class="empty"':''}>${l.website||'Girilmemiş'}</span></div>
+        <div class="detail-row"><label>İlçe</label><span ${!l.ilce?'class="empty"':''}>${l.ilce||'—'}</span></div>
+        <div class="detail-row"><label>Sanayi Sitesi</label><span ${!l.sanayi_sitesi?'class="empty"':''}>${l.sanayi_sitesi||'—'}</span></div>
+        <div class="detail-row"><label>Adres</label><span ${!l.adres?'class="empty"':''}>${l.adres||'Girilmemiş'}</span></div>
+        <div class="detail-row"><label>Aksam Grubu</label><span>${l.aksam_grubu||'—'}</span></div>
+        <div class="detail-row"><label>Kaynak</label><span>${l.kaynak||'—'}</span></div>
+        <div class="detail-row"><label>Eklenme Tarihi</label><span>${tarih}</span></div>
+        <div class="detail-row"><label>Notlar</label><span ${!l.notlar?'class="empty"':''}>${l.notlar||'Not yok'}</span></div>
+
+        <div class="detail-actions">
+            <button class="btn btn-navy btn-sm" onclick="openEditModal('${l.id}')">Düzenle</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteLead('${l.id}')">Sil</button>
+        </div>
+    `;
+    document.getElementById('detailOverlay').classList.add('active');
+}
+
+function closeDetail() {
+    document.getElementById('detailOverlay').classList.remove('active');
+}
+
+async function updateStatus(id, newStatus, e) {
+    e.stopPropagation();
+    if (!sb) return;
+    const { error } = await sb.from('leads').update({ durum: newStatus }).eq('id', id);
+    if (error) { toast('Hata: ' + error.message); return; }
+    toast('Durum güncellendi ✓');
+    await loadLeads();
+    openDetail(id);
+}
+
+// ─────────────────────────────────────────────
+// ADD / EDIT
+// ─────────────────────────────────────────────
+function openAddModal() {
+    editingId = null;
+    document.getElementById('modalTitle').textContent = 'Yeni Lead Ekle';
+    clearForm();
+    document.getElementById('addModal').classList.add('active');
+}
+
+function openEditModal(id) {
+    editingId = id;
+    const l = allLeads.find(x => x.id === id);
+    if (!l) return;
+    document.getElementById('modalTitle').textContent = 'Lead Düzenle';
+    document.getElementById('mFirma').value    = l.firma_adi || '';
+    document.getElementById('mYetkili').value  = l.yetkili_kisi || '';
+    document.getElementById('mTelefon').value  = l.telefon || '';
+    document.getElementById('mEmail').value    = l.email || '';
+    document.getElementById('mWA').value       = l.whatsapp || '';
+    document.getElementById('mIlce').value     = l.ilce || '';
+    document.getElementById('mSanayi').value   = l.sanayi_sitesi || '';
+    document.getElementById('mWeb').value      = l.website || '';
+    document.getElementById('mAksam').value    = l.aksam_grubu || 'kaporta';
+    document.getElementById('mDurum').value    = l.durum || 'yeni';
+    document.getElementById('mKaynak').value   = l.kaynak || 'manuel';
+    document.getElementById('mAdres').value    = l.adres || '';
+    document.getElementById('mNotlar').value   = l.notlar || '';
+    closeDetail();
+    document.getElementById('addModal').classList.add('active');
+}
+
+function clearForm() {
+    ['mFirma','mYetkili','mTelefon','mEmail','mWA','mIlce','mSanayi','mWeb','mAdres','mNotlar']
+        .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('mAksam').value  = 'kaporta';
+    document.getElementById('mDurum').value  = 'yeni';
+    document.getElementById('mKaynak').value = 'manuel';
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    editingId = null;
+}
+
+async function saveLead() {
+    if (!sb) { toast('Bağlantı yok'); return; }
+    const firma = document.getElementById('mFirma').value.trim();
+    if (!firma) { toast('Firma adı zorunlu'); return; }
+
+    const payload = {
+        firma_adi:    firma,
+        yetkili_kisi: document.getElementById('mYetkili').value.trim() || null,
+        telefon:      document.getElementById('mTelefon').value.trim() || null,
+        email:        document.getElementById('mEmail').value.trim()   || null,
+        whatsapp:     document.getElementById('mWA').value.trim()      || null,
+        ilce:         document.getElementById('mIlce').value.trim()    || null,
+        sanayi_sitesi:document.getElementById('mSanayi').value.trim()  || null,
+        website:      document.getElementById('mWeb').value.trim()     || null,
+        aksam_grubu:  document.getElementById('mAksam').value,
+        durum:        document.getElementById('mDurum').value,
+        kaynak:       document.getElementById('mKaynak').value,
+        adres:        document.getElementById('mAdres').value.trim()   || null,
+        notlar:       document.getElementById('mNotlar').value.trim()  || null,
+    };
+
+    const { error } = editingId
+        ? await sb.from('leads').update(payload).eq('id', editingId)
+        : await sb.from('leads').insert([payload]);
+
+    if (error) { toast('Hata: ' + error.message); return; }
+    toast(editingId ? 'Güncellendi ✓' : 'Lead eklendi ✓');
+    closeModal('addModal');
+    loadLeads();
+}
+
+async function deleteLead(id) {
+    if (!confirm('Bu lead silinecek. Emin misiniz?')) return;
+    const { error } = await sb.from('leads').delete().eq('id', id);
+    if (error) { toast('Hata: ' + error.message); return; }
+    toast('Silindi ✓');
+    closeDetail();
+    loadLeads();
+}
+
+// ─────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────
+function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
