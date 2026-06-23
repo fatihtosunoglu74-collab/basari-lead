@@ -595,6 +595,8 @@ const durumMap = {
 window.addEventListener('DOMContentLoaded', () => {
     // İl dropdown'ı doldur
     const ilSelect = document.getElementById('scanIl');
+    ilSelect.innerHTML += `<option value="TUM" style="background:#FEF3C7; font-weight:700; color:#92400E">🇹🇷 Tüm Türkiye (81 il)</option>`;
+    ilSelect.innerHTML += `<option disabled>──────────────</option>`;
     TURKIYE_ILLER.forEach(il => {
         ilSelect.innerHTML += `<option value="${il}">${il}</option>`;
     });
@@ -813,44 +815,232 @@ function openScanModal() {
     document.getElementById('scanModal').classList.add('active');
 }
 
+async function startTumTurkiyeTaramasi(aksam) {
+    const statusEl = document.getElementById('scanStatus');
+    const btn = document.getElementById('scanStartBtn');
+
+    statusEl.style.display = 'block';
+    statusEl.style.background = '#FEF3C7';
+    statusEl.style.color = '#92400E';
+    statusEl.innerHTML = `
+        <div style="font-weight:700; margin-bottom:8px">🇹🇷 Tüm Türkiye Taraması Başlıyor</div>
+        <div style="font-size:12px; margin-bottom:8px">81 il sırayla taranacak. Bu pencereyi kapatabilirsin, tarama arka planda devam eder.</div>
+        <div style="background:#FCD34D33; border-radius:8px; height:10px; overflow:hidden; margin-top:8px">
+            <div id="tumProgressBar" style="background:linear-gradient(90deg, #C8962E, #F4C95D); height:100%; width:0%; transition:width 0.5s; border-radius:8px"></div>
+        </div>
+        <div id="tumProgressText" style="margin-top:6px; font-size:12px; font-weight:600">Hazırlanıyor...</div>
+        <div id="tumProgressList" style="margin-top:8px; font-size:11px; max-height:120px; overflow-y:auto; background:#fff; padding:6px; border-radius:6px; display:none"></div>
+    `;
+    btn.disabled = true;
+    btn.textContent = 'Çalışıyor...';
+
+    const baslangic = allLeads.length;
+    const toplamIl = TURKIYE_ILLER.length;
+    let tamamlanan = 0;
+    let toplamYeni = 0;
+    const tamamlananIller = [];
+
+    for (const il of TURKIYE_ILLER) {
+        // Webhook'u tetikle
+        try {
+            await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ il, aksam })
+            });
+        } catch (e) {}
+
+        tamamlanan++;
+        const pct = Math.round((tamamlanan / toplamIl) * 100);
+
+        document.getElementById('tumProgressBar').style.width = pct + '%';
+        document.getElementById('tumProgressText').innerHTML =
+            `%${pct} — <strong>${il}</strong> taranıyor (${tamamlanan}/${toplamIl})`;
+
+        // İl başına 60 saniye bekle (n8n'in işi bitirmesi için)
+        // Büyük illerde daha uzun bekle
+        const buyukIller = ['İstanbul','İzmir','Ankara','Antalya','Bursa','Konya','Adana','Gaziantep'];
+        const bekleme = buyukIller.includes(il) ? 120000 : 45000;
+
+        // Her 10 saniyede bir lead sayısını kontrol et
+        for (let i = 0; i < bekleme / 10000; i++) {
+            await new Promise(r => setTimeout(r, 10000));
+            if (sb) {
+                try {
+                    const { count } = await sb.from('leads').select('*', { count: 'exact', head: true });
+                    const yeni = count - baslangic;
+                    if (yeni !== toplamYeni) {
+                        toplamYeni = yeni;
+                        document.getElementById('tumProgressText').innerHTML =
+                            `%${pct} — <strong>${il}</strong> taranıyor (${tamamlanan}/${toplamIl}) — <strong>${toplamYeni} firma eklendi</strong>`;
+                    }
+                } catch (e) {}
+            }
+        }
+
+        tamamlananIller.push(`✓ ${il}`);
+        const listEl = document.getElementById('tumProgressList');
+        listEl.style.display = 'block';
+        listEl.innerHTML = tamamlananIller.slice(-15).reverse().join('<br>');
+    }
+
+    // Tamamlandı
+    document.getElementById('tumProgressBar').style.width = '100%';
+    statusEl.style.background = '#D1FAE5';
+    statusEl.style.color = '#065F46';
+
+    if (sb) {
+        try {
+            const { count } = await sb.from('leads').select('*', { count: 'exact', head: true });
+            toplamYeni = count - baslangic;
+        } catch (e) {}
+    }
+
+    document.getElementById('tumProgressText').innerHTML =
+        `✓ <strong>Tüm Türkiye taraması tamamlandı!</strong> Toplam ${toplamYeni} yeni firma eklendi.`;
+
+    await loadLeads();
+    btn.textContent = 'Kapat';
+    btn.disabled = false;
+    btn.onclick = () => { closeModal('scanModal'); btn.onclick = startScan; };
+    toast(`✓ Tüm Türkiye tamamlandı: ${toplamYeni} firma`);
+}
+
 async function startScan() {
     const il = document.getElementById('scanIl').value;
     const aksam = document.getElementById('scanAksam').value;
 
     if (!il) { toast('İl seçin'); return; }
 
+    // ─── TÜM TÜRKİYE ÖZEL AKIŞI ───
+    if (il === 'TUM') {
+        const onay = confirm(
+            '⚠️ TÜM TÜRKİYE TARAMASI\n\n' +
+            '• 81 il taranacak\n' +
+            '• Tahmini süre: 1.5 - 2 saat\n' +
+            '• Google Places API maliyeti: ~$20-25 (700-850 TL)\n' +
+            '• Beklenen firma sayısı: 3.000 - 8.000\n\n' +
+            'Devam etmek istiyor musun?'
+        );
+        if (!onay) return;
+        return startTumTurkiyeTaramasi(aksam);
+    }
+    // ─── /TÜM TÜRKİYE ───
+
     const statusEl = document.getElementById('scanStatus');
     const btn = document.getElementById('scanStartBtn');
 
+    // İl büyüklüğüne göre tahmini süre (saniye)
+    const buyukIller = ['İstanbul','İzmir','Ankara','Antalya','Bursa','Konya','Adana','Gaziantep','Kayseri','Mersin','Kocaeli','Samsun','Hatay'];
+    const ortaIller = ['Manisa','Sakarya','Tekirdağ','Trabzon','Aydın','Şanlıurfa','Diyarbakır','Eskişehir','Denizli','Muğla','Balıkesir','Van','Malatya'];
+    const tahminiSaniye = buyukIller.includes(il) ? 180 : (ortaIller.includes(il) ? 120 : 60);
+
     statusEl.style.display = 'block';
-    statusEl.innerHTML = `⏳ ${il} taraması başladı, lütfen bekleyin...`;
+    statusEl.style.background = '#FEF3C7';
+    statusEl.style.color = '#92400E';
+    statusEl.innerHTML = `
+        <div style="font-weight:600; margin-bottom:8px">⏳ ${il} taraması başlatılıyor...</div>
+        <div style="background:#FCD34D33; border-radius:8px; height:8px; overflow:hidden; margin-top:8px">
+            <div id="scanProgressBar" style="background:linear-gradient(90deg, #C8962E, #F4C95D); height:100%; width:0%; transition:width 1s ease-out; border-radius:8px"></div>
+        </div>
+        <div id="scanProgressText" style="margin-top:6px; font-size:12px; font-weight:600">%0 — Bağlantı kuruluyor...</div>
+    `;
     btn.disabled = true;
     btn.textContent = 'Çalışıyor...';
 
-    try {
-        const res = await fetch(WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ il, aksam })
-        });
+    // Webhook'u tetikle (fire and forget)
+    fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ il, aksam })
+    }).catch(() => {});
 
-        if (!res.ok) throw new Error('Webhook hatası: ' + res.status);
+    // Progress bar animasyonu
+    const startTime = Date.now();
+    const progressEl = document.getElementById('scanProgressBar');
+    const progressTextEl = document.getElementById('scanProgressText');
+    const ilceCount = buyukIller.includes(il) ? 35 : (ortaIller.includes(il) ? 18 : 8);
 
-        const data = await res.json();
-        statusEl.style.background = '#D1FAE5';
-        statusEl.style.color = '#065F46';
-        statusEl.innerHTML = `✓ Tarama tamamlandı. Liste yenileniyor...`;
+    const stages = [
+        { pct: 5, msg: 'Bağlantı kuruluyor...' },
+        { pct: 15, msg: `${il}'deki ${ilceCount} ilçe taranıyor...` },
+        { pct: 35, msg: 'Firmalar bulunuyor...' },
+        { pct: 55, msg: 'Telefon bilgileri alınıyor...' },
+        { pct: 75, msg: 'Web siteleri taranıyor...' },
+        { pct: 90, msg: 'E-posta adresleri çıkarılıyor...' },
+        { pct: 96, msg: 'Veriler kaydediliyor...' }
+    ];
 
-        await loadLeads();
-        setTimeout(() => closeModal('scanModal'), 1500);
-        toast(`✓ ${il} taraması bitti`);
+    const progressInterval = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const ratio = Math.min(elapsed / tahminiSaniye, 0.96);
+        const pct = Math.round(ratio * 96);
 
-    } catch (err) {
-        statusEl.style.background = '#FEE2E2';
-        statusEl.style.color = '#991B1B';
-        statusEl.innerHTML = `❌ Hata: ${err.message}`;
-        btn.disabled = false;
-        btn.textContent = 'Tekrar Dene';
+        // Aşama mesajı
+        const stage = stages.slice().reverse().find(s => pct >= s.pct) || stages[0];
+
+        progressEl.style.width = pct + '%';
+        progressTextEl.textContent = `%${pct} — ${stage.msg}`;
+
+        // %96'ya gelince bekleme moduna geç
+        if (pct >= 96) {
+            clearInterval(progressInterval);
+            checkCompletion();
+        }
+    }, 1000);
+
+    // Tamamlanma kontrolü - her 5 saniyede bir lead sayısını kontrol et
+    const initialCount = allLeads.length;
+    let completionChecks = 0;
+    let lastCount = initialCount;
+    let stableCount = 0;
+
+    async function checkCompletion() {
+        completionChecks++;
+        progressTextEl.textContent = `%98 — Tamamlanıyor, son veriler bekleniyor...`;
+
+        // 10 dakika sonra zaman aşımı
+        if (completionChecks > 120) {
+            progressEl.style.width = '100%';
+            progressTextEl.textContent = '✓ Tarama tamamlandı';
+            statusEl.style.background = '#D1FAE5';
+            statusEl.style.color = '#065F46';
+            await loadLeads();
+            btn.textContent = 'Kapat';
+            btn.disabled = false;
+            btn.onclick = () => { closeModal('scanModal'); btn.onclick = startScan; };
+            return;
+        }
+
+        // Lead sayısı arttı mı kontrol et
+        try {
+            if (sb) {
+                const { count } = await sb.from('leads').select('*', { count: 'exact', head: true });
+                if (count > lastCount) {
+                    lastCount = count;
+                    stableCount = 0;
+                    progressTextEl.textContent = `%98 — ${count - initialCount} firma eklendi, devam ediyor...`;
+                } else {
+                    stableCount++;
+                }
+
+                // 3 kez üst üste sayı değişmediyse tamamlandı say
+                if (stableCount >= 3 && count > initialCount) {
+                    progressEl.style.width = '100%';
+                    progressTextEl.innerHTML = `✓ Tarama tamamlandı — <strong>${count - initialCount} yeni firma</strong> eklendi`;
+                    statusEl.style.background = '#D1FAE5';
+                    statusEl.style.color = '#065F46';
+                    await loadLeads();
+                    btn.textContent = 'Kapat';
+                    btn.disabled = false;
+                    btn.onclick = () => { closeModal('scanModal'); btn.onclick = startScan; };
+                    toast(`✓ ${count - initialCount} yeni firma eklendi`);
+                    return;
+                }
+            }
+        } catch (e) {}
+
+        setTimeout(checkCompletion, 5000);
     }
 }
 
