@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Başarı Otomotiv — Lead Yönetim</title>
+    <title>Başarı Otomotiv — PUSULA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -31,16 +31,16 @@
             color: white;
             padding: 10px 24px;
             min-height: 64px;
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            justify-content: space-between;
             border-bottom: 3px solid var(--gold);
             position: sticky;
             top: 0;
             z-index: 100;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
-        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-left { display: flex; align-items: center; }
         .header-logo {
             height: 44px;
             width: auto;
@@ -49,10 +49,18 @@
             padding: 4px 8px;
             object-fit: contain;
         }
-        .header-titles { display: flex; flex-direction: column; line-height: 1.2; }
-        .header-brand { font-size: 14px; font-weight: 800; letter-spacing: 1px; color: white; }
-        .header-subtitle { font-size: 11px; font-weight: 500; color: var(--gold); letter-spacing: 0.4px; margin-top: 1px; }
-        .header-right { display: flex; gap: 10px; align-items: center; }
+        .header-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .header-pusula {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 6px;
+            color: var(--gold);
+        }
+        .header-right { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
         .header-count {
             font-size: 11px;
             color: #9CA3AF;
@@ -334,16 +342,15 @@
 <div class="header">
     <div class="header-left">
         <img id="logoImg" class="header-logo" alt="Başarı Otomotiv"/>
-        <div class="header-titles">
-            <div class="header-brand">BAŞARI OTOMOTİV</div>
-            <div class="header-subtitle">Lead Yönetim Sistemi</div>
-        </div>
+    </div>
+    <div class="header-center">
+        <span class="header-pusula">PUSULA</span>
     </div>
     <div class="header-right">
         <span class="header-count" id="headerCount"></span>
         <button class="btn btn-ghost btn-sm" onclick="loadLeads()">↻</button>
         <button class="btn btn-navy" onclick="openScanModal()">⚡ Otomatik Tara</button>
-        <button class="btn btn-gold" onclick="openAddModal()">+ Yeni Lead</button>
+        <button class="btn btn-gold" onclick="openAddModal()">+ Yeni Firma</button>
     </div>
 </div>
 
@@ -363,7 +370,7 @@
     <!-- KPI Cards -->
     <div class="kpi-grid">
         <div class="kpi-card" onclick="filterByStatus('')" id="kpi-toplam">
-            <div class="kpi-label">Toplam Lead</div>
+            <div class="kpi-label">Toplam Firma</div>
             <div class="kpi-value" id="kv-toplam">—</div>
         </div>
         <div class="kpi-card" onclick="filterByStatus('yeni')">
@@ -461,10 +468,14 @@
                 <label>Aksam Grubu *</label>
                 <select id="scanAksam">
                     <option value="kaporta">Kaporta</option>
-                    <option value="mekanik">Mekanik</option>
-                    <option value="aydınlatma">Aydınlatma</option>
-                    <option value="radyatör">Radyatör</option>
-                    <option value="yedek parça">Genel Yedek Parça</option>
+                    <option value="tuning">Tuning</option>
+                    <option value="radyator_fan">Radyatör ve Fan Grubu</option>
+                    <option value="elektrik">Elektrik</option>
+                    <option value="aks_direksiyon">Aks ve Direksiyon Grubu</option>
+                    <option value="motor">Motor</option>
+                    <option value="sanziman">Şanzıman</option>
+                    <option value="tekerlek_fren">Tekerlek ve Fren Grubu</option>
+                    <option value="yakit_egzoz">Yakıt ve Egzoz</option>
                 </select>
             </div>
         </div>
@@ -484,7 +495,7 @@
 <div class="overlay" id="addModal">
     <div class="modal">
         <div class="modal-header">
-            <div class="modal-title" id="modalTitle">Yeni Lead Ekle</div>
+            <div class="modal-title" id="modalTitle">Yeni Firma Ekle</div>
             <button class="modal-close" onclick="closeModal('addModal')">✕</button>
         </div>
 
@@ -525,10 +536,14 @@
                 <label>Aksam Grubu</label>
                 <select id="mAksam">
                     <option value="kaporta">Kaporta</option>
-                    <option value="mekanik">Mekanik</option>
-                    <option value="aydinlatma">Aydınlatma</option>
-                    <option value="radyator">Radyatör</option>
-                    <option value="diger">Diğer</option>
+                    <option value="tuning">Tuning</option>
+                    <option value="radyator_fan">Radyatör ve Fan Grubu</option>
+                    <option value="elektrik">Elektrik</option>
+                    <option value="aks_direksiyon">Aks ve Direksiyon Grubu</option>
+                    <option value="motor">Motor</option>
+                    <option value="sanziman">Şanzıman</option>
+                    <option value="tekerlek_fren">Tekerlek ve Fren Grubu</option>
+                    <option value="yakit_egzoz">Yakıt ve Egzoz</option>
                 </select>
             </div>
             <div class="fg">
@@ -741,7 +756,7 @@ function renderTable(leads) {
             <tr class="state-row"><td colspan="9">
                 <div class="state-icon">🔍</div>
                 <div class="state-title">Henüz lead yok</div>
-                <div style="font-size:13px">+ Yeni Lead butonuyla ekleyin veya n8n ile otomatik doldurun</div>
+                <div style="font-size:13px">+ Yeni Firma butonuyla ekleyin veya n8n ile otomatik doldurun</div>
             </td></tr>`;
         return;
     }
@@ -1077,7 +1092,7 @@ async function startScan() {
 // ─────────────────────────────────────────────
 function openAddModal() {
     editingId = null;
-    document.getElementById('modalTitle').textContent = 'Yeni Lead Ekle';
+    document.getElementById('modalTitle').textContent = 'Yeni Firma Ekle';
     clearForm();
     document.getElementById('addModal').classList.add('active');
 }
