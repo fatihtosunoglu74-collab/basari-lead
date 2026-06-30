@@ -1040,9 +1040,10 @@ async function startScan() {
 
     async function checkCompletion() {
         completionChecks++;
+        const elapsedSec = (Date.now() - startTime) / 1000;
         progressTextEl.textContent = `%98 — Tamamlanıyor, son veriler bekleniyor...`;
 
-        // 10 dakika sonra zaman aşımı
+        // 10 dakika sonra zaman aşımı (son güvenlik freni)
         if (completionChecks > 120) {
             progressEl.style.width = '100%';
             progressTextEl.textContent = '✓ Tarama tamamlandı';
@@ -1078,6 +1079,20 @@ async function startScan() {
                     btn.disabled = false;
                     btn.onclick = () => { closeModal('scanModal'); btn.onclick = startScan; };
                     toast(`✓ ${count - initialCount} yeni firma eklendi`);
+                    return;
+                }
+
+                // Sıfır sonuç koruması: il büyüklüğüne göre tahmini süre geçti
+                // ve hâlâ hiç yeni firma yoksa 10 dk beklemeden erken kapat
+                if (count === initialCount && elapsedSec >= tahminiSaniye) {
+                    progressEl.style.width = '100%';
+                    progressTextEl.textContent = '✓ Tarama tamamlandı — 0 firma bulundu';
+                    statusEl.style.background = '#D1FAE5';
+                    statusEl.style.color = '#065F46';
+                    btn.textContent = 'Kapat';
+                    btn.disabled = false;
+                    btn.onclick = () => { closeModal('scanModal'); btn.onclick = startScan; };
+                    toast('Tarama tamamlandı — sonuç bulunamadı');
                     return;
                 }
             }
