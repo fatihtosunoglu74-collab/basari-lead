@@ -160,6 +160,7 @@
         .btn-ghost { background: white; color: var(--text); border: 1px solid var(--border); }
         .btn-sm { padding: 4px 10px; font-size: 12px; }
         .btn-danger { background: #FEE2E2; color: #991B1B; }
+        .btn-sky { background: #EAF4FC; color: #1B79B4; }
 
         /* ─── Table ─── */
         .table-wrapper {
@@ -185,6 +186,22 @@
         td { padding: 9px 13px; font-size: 13px; vertical-align: middle; }
         .td-firma { font-weight: 600; color: var(--navy); }
         .td-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+        .nav-pin-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            margin-left: 6px;
+            border-radius: 50%;
+            background: #EAF4FC;
+            color: #1B79B4;
+            font-size: 11px;
+            cursor: pointer;
+            vertical-align: middle;
+            transition: background 0.15s, transform 0.15s;
+        }
+        .nav-pin-btn:hover { background: var(--gold); color: #FFFFFF; transform: scale(1.08); }
         .td-light { color: var(--text-light); font-size: 12px; }
 
         /* ─── Badges ─── */
@@ -767,7 +784,7 @@ function renderTable(leads) {
         return `<tr onclick="openDetail('${l.id}')">
             <td class="td-light">${i+1}</td>
             <td>
-                <div class="td-firma">${l.firma_adi||'—'}</div>
+                <div class="td-firma">${l.firma_adi||'—'}${l.adres ? `<span class="nav-pin-btn" title="Yol Tarifi Aç" onclick="openNavigation('${l.id}', event)">📍</span>` : ''}</div>
                 ${l.yetkili_kisi ? `<div class="td-sub">${l.yetkili_kisi}</div>` : ''}
             </td>
             <td>
@@ -782,6 +799,17 @@ function renderTable(leads) {
             <td class="td-light">${tarih}</td>
         </tr>`;
     }).join('');
+}
+
+// ─────────────────────────────────────────────
+// NAVİGASYON
+// ─────────────────────────────────────────────
+function openNavigation(id, e) {
+    if (e) e.stopPropagation();
+    const l = allLeads.find(x => x.id === id);
+    if (!l || !l.adres) { toast('Adres bilgisi yok'); return; }
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(l.adres)}&travelmode=driving`;
+    window.open(url, '_blank');
 }
 
 // ─────────────────────────────────────────────
@@ -826,6 +854,7 @@ function openDetail(id) {
         <div class="detail-row"><label>Notlar</label><span ${!l.notlar?'class="empty"':''}>${l.notlar||'Not yok'}</span></div>
 
         <div class="detail-actions">
+            ${l.adres ? `<button class="btn btn-sky btn-sm" onclick="openNavigation('${l.id}', event)">📍 Yol Tarifi</button>` : ''}
             <button class="btn btn-navy btn-sm" onclick="openEditModal('${l.id}')">Düzenle</button>
             <button class="btn btn-danger btn-sm" onclick="deleteLead('${l.id}')">Sil</button>
         </div>
