@@ -698,9 +698,18 @@ function resetKey() {
 async function loadLeads() {
     if (!sb) return;
     renderLoading();
-    const { data, error } = await sb.from('leads').select('*').order('created_at', { ascending: false });
-    if (error) { toast('Hata: ' + error.message); return; }
-    allLeads = data || [];
+    let allData = [];
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+        const { data, error } = await sb.from('leads').select('*').order('created_at', { ascending: false }).range(from, from + pageSize - 1);
+        if (error) { toast('Hata: ' + error.message); return; }
+        if (!data || data.length === 0) break;
+        allData = allData.concat(data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+    }
+    allLeads = allData;
     updateKPI();
     populateFilters();
     applyFilters();
@@ -708,13 +717,14 @@ async function loadLeads() {
 }
 
 function updateKPI() {
-    const c = (s) => allLeads.filter(l => l.durum === s).length;
+    const norm = (s) => (s || '').toString().trim().toLowerCase();
+    const c = (...vals) => allLeads.filter(l => vals.includes(norm(l.durum))).length;
     document.getElementById('kv-toplam').textContent  = allLeads.length;
     document.getElementById('kv-yeni').textContent    = c('yeni');
-    document.getElementById('kv-iletisim').textContent= c('iletisim_kuruldu');
+    document.getElementById('kv-iletisim').textContent= c('iletisim_kuruldu', 'iletişim kuruldu');
     document.getElementById('kv-ilgili').textContent  = c('ilgili');
-    document.getElementById('kv-evrak').textContent   = c('evrak_bekleniyor') + c('findeks_bekleniyor');
-    document.getElementById('kv-cari').textContent    = c('cari_acildi');
+    document.getElementById('kv-evrak').textContent   = c('evrak_bekleniyor', 'findeks_bekleniyor', 'evrak/findeks bekleniyor');
+    document.getElementById('kv-cari').textContent    = c('cari_acildi', 'cari açıldı');
 }
 
 function populateFilters() {
