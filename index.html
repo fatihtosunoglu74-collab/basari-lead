@@ -695,15 +695,24 @@ function resetKey() {
 // ─────────────────────────────────────────────
 // DATA
 // ─────────────────────────────────────────────
+async function fetchLeadsPage(from, pageSize, retries = 2) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        const { data, error } = await sb.from('leads').select('*').order('created_at', { ascending: false }).range(from, from + pageSize - 1);
+        if (!error) return { data, error: null };
+        if (attempt < retries) await new Promise(r => setTimeout(r, 600));
+        else return { data: null, error };
+    }
+}
+
 async function loadLeads() {
     if (!sb) return;
-    renderLoading();
+    if (!allLeads.length) renderLoading();
     let allData = [];
     let from = 0;
     const pageSize = 1000;
     while (true) {
-        const { data, error } = await sb.from('leads').select('*').order('created_at', { ascending: false }).range(from, from + pageSize - 1);
-        if (error) { toast('Hata: ' + error.message); return; }
+        const { data, error } = await fetchLeadsPage(from, pageSize);
+        if (error) { toast('Bağlantı sorunu, tekrar deniyorum: ' + error.message); return; }
         if (!data || data.length === 0) break;
         allData = allData.concat(data);
         if (data.length < pageSize) break;
