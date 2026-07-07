@@ -376,6 +376,80 @@
             pointer-events: none;
         }
         .toast.show { opacity: 1; transform: translateY(0); }
+
+        /* ═══════════════════════════════════════════
+           MOBİL UYUMLULUK (tablet ve telefon)
+           ═══════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            /* Header: logoyu küçült, PUSULA yazısını daralt, butonları sığdır */
+            .header {
+                grid-template-columns: auto 1fr auto;
+                padding: 8px 12px;
+                gap: 8px;
+            }
+            .header-logo { height: 32px; padding: 3px 6px; }
+            .header-pusula { font-size: 18px; letter-spacing: 2px; }
+            .header-compass { width: 22px; height: 22px; }
+            .header-count { display: none; }
+            .header-right { gap: 6px; }
+            .header-right .btn { padding: 6px 10px; font-size: 12px; }
+            .header-right .btn span.btn-text { display: none; }
+
+            .main { padding: 12px; }
+
+            /* KPI kartları: 6 sütun yerine 2 sütun */
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .kpi-card { padding: 10px 12px; gap: 8px; }
+            .kpi-icon { width: 34px; height: 34px; font-size: 15px; }
+            .kpi-value { font-size: 19px; }
+            .kpi-label { font-size: 9px; }
+
+            /* Filtreler: tam genişlik, alt alta */
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .toolbar input, .toolbar select { width: 100%; }
+            .toolbar-spacer { display: none; }
+
+            /* Tablo -> kart görünümü */
+            .table-wrapper { border: none; background: none; overflow: visible; }
+            table, thead, tbody, tr, td { display: block; width: 100%; }
+            thead { display: none; }
+            tbody tr {
+                background: white;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                margin-bottom: 10px;
+                padding: 10px 12px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            }
+            tbody tr td { padding: 6px 0; border: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+            tbody tr td[data-label="#"] { display: none; }
+            tbody tr td::before {
+                content: attr(data-label);
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.4px;
+                color: var(--text-light);
+                flex-shrink: 0;
+            }
+            tbody tr td[data-label="Firma Adı"] { flex-direction: column; align-items: flex-start; gap: 2px; }
+            tbody tr td[data-label="Firma Adı"]::before { margin-bottom: 2px; }
+            .td-firma { font-size: 14px; }
+
+            /* Modallar: tam genişlik */
+            .modal { width: calc(100vw - 24px) !important; padding: 16px; max-height: 88vh; }
+            .form-grid { grid-template-columns: 1fr; }
+            .config-bar input { width: 100%; }
+
+            /* Detay paneli: tam ekran */
+            .detail-panel { width: 100%; }
+        }
+
+        @media (max-width: 420px) {
+            .header-pusula { font-size: 15px; letter-spacing: 1px; }
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .header-right .btn-ghost { width: 28px; height: 28px; }
+        }
     </style>
 </head>
 <body>
@@ -411,8 +485,8 @@
     <div class="header-right">
         <span class="header-count" id="headerCount"></span>
         <button class="btn btn-ghost btn-sm" onclick="loadLeads()">↻</button>
-        <button class="btn btn-navy" onclick="openScanModal()">⚡ Otomatik Tara</button>
-        <button class="btn btn-gold" onclick="openAddModal()">+ Yeni Firma</button>
+        <button class="btn btn-navy" onclick="openScanModal()">⚡<span class="btn-text"> Otomatik Tara</span></button>
+        <button class="btn btn-gold" onclick="openAddModal()">+<span class="btn-text"> Yeni Firma</span></button>
     </div>
 </div>
 
@@ -864,21 +938,21 @@ function renderTable(leads) {
         const tarih = new Date(l.created_at).toLocaleDateString('tr-TR', {day:'2-digit',month:'2-digit',year:'2-digit'});
         const kaynakLabel = { google_places:'Google', manuel:'Manuel', referans:'Referans' }[l.kaynak] || l.kaynak;
         return `<tr onclick="openDetail('${l.id}')">
-            <td class="td-light">${i+1}</td>
-            <td>
+            <td class="td-light" data-label="#">${i+1}</td>
+            <td data-label="Firma Adı">
                 <div class="td-firma">${l.firma_adi||'—'}${l.adres ? `<span class="nav-pin-btn" title="Yol Tarifi Aç" onclick="openNavigation('${l.id}', event)">📍</span>` : ''}</div>
                 ${l.yetkili_kisi ? `<div class="td-sub">${l.yetkili_kisi}</div>` : ''}
             </td>
-            <td>
+            <td data-label="İlçe / Sanayi">
                 <div class="td-light">${l.ilce||'—'}</div>
                 ${l.sanayi_sitesi ? `<div class="td-sub">${l.sanayi_sitesi}</div>` : ''}
             </td>
-            <td class="td-light">${l.telefon||'—'}</td>
-            <td class="td-light">${l.email||'—'}</td>
-            <td class="td-light">${l.aksam_grubu||'—'}</td>
-            <td><span class="badge ${d.badge}">${d.label}</span></td>
-            <td class="td-light">${kaynakLabel}</td>
-            <td class="td-light">${tarih}</td>
+            <td class="td-light" data-label="Telefon">${l.telefon||'—'}</td>
+            <td class="td-light" data-label="E-posta">${l.email||'—'}</td>
+            <td class="td-light" data-label="Aksam">${l.aksam_grubu||'—'}</td>
+            <td data-label="Durum"><span class="badge ${d.badge}">${d.label}</span></td>
+            <td class="td-light" data-label="Kaynak">${kaynakLabel}</td>
+            <td class="td-light" data-label="Tarih">${tarih}</td>
         </tr>`;
     }).join('');
 }
