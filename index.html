@@ -27,10 +27,10 @@
 
         /* ─── Header ─── */
         .header {
-            background: var(--navy);
+            background: linear-gradient(180deg, #24365E 0%, var(--navy) 100%);
             color: white;
             padding: 10px 24px;
-            min-height: 64px;
+            min-height: 68px;
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             align-items: center;
@@ -38,7 +38,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.25);
         }
         .header-left { display: flex; align-items: center; }
         .header-logo {
@@ -53,20 +53,35 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            gap: 12px;
         }
         .header-pusula {
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: 6px;
-            color: var(--gold);
+            font-size: 30px;
+            font-weight: 900;
+            letter-spacing: 5px;
+            font-style: italic;
+            background: linear-gradient(180deg, #FFFFFF 0%, #BFDBFE 55%, #60A5FA 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 22px rgba(96,165,250,0.55);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+        .header-compass {
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.4));
         }
         .header-right { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
         .header-count {
             font-size: 11px;
-            color: #9CA3AF;
-            background: rgba(255,255,255,0.06);
-            padding: 4px 10px;
-            border-radius: 12px;
+            font-weight: 700;
+            color: white;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.18);
+            padding: 6px 14px;
+            border-radius: 20px;
         }
 
         /* ─── Config Bar ─── */
@@ -111,16 +126,22 @@
         }
         .kpi-card {
             background: white;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 14px 16px;
             border: 1px solid var(--border);
             cursor: pointer;
-            transition: border-color 0.15s;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
-        .kpi-card:hover { border-color: var(--gold); }
+        .kpi-card:hover { border-color: var(--gold); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .kpi-card.active { border-color: var(--navy); border-width: 2px; }
-        .kpi-label { font-size: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
-        .kpi-value { font-size: 26px; font-weight: 800; color: var(--navy); }
+        .kpi-icon { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+        .kpi-text { min-width: 0; }
+        .kpi-label { font-size: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; white-space: nowrap; }
+        .kpi-value { font-size: 24px; font-weight: 800; color: var(--navy); line-height: 1; }
 
         /* ─── Toolbar ─── */
         .toolbar {
@@ -161,6 +182,10 @@
         .btn-sm { padding: 4px 10px; font-size: 12px; }
         .btn-danger { background: #FEE2E2; color: #991B1B; }
         .btn-sky { background: #EAF4FC; color: #1B79B4; }
+        .header-right .btn { border-radius: 20px; padding: 8px 16px; }
+        .header-right .btn-ghost { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.18); border-radius: 50%; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .header-right .btn-navy { background: linear-gradient(180deg,#2E4373,var(--navy)); box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+        .header-right .btn-gold { background: linear-gradient(180deg,#E0A83C,var(--gold)); box-shadow: 0 2px 8px rgba(200,150,46,0.4); font-weight: 700; }
 
         /* ─── Table ─── */
         .table-wrapper {
@@ -361,6 +386,26 @@
         <img id="logoImg" class="header-logo" alt="Başarı Otomotiv"/>
     </div>
     <div class="header-center">
+        <svg class="header-compass" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="compassBody" cx="35%" cy="30%" r="75%">
+                    <stop offset="0%" stop-color="#F3F4F6"/>
+                    <stop offset="55%" stop-color="#C6CBD3"/>
+                    <stop offset="100%" stop-color="#8A909B"/>
+                </radialGradient>
+            </defs>
+            <circle cx="24" cy="24" r="21" fill="url(#compassBody)" stroke="#6B7280" stroke-width="1.5"/>
+            <circle cx="24" cy="24" r="16.5" fill="#FBFCFD" stroke="#9CA3AF" stroke-width="0.75"/>
+            <g stroke="#9CA3AF" stroke-width="0.5">
+                <line x1="24" y1="8.5" x2="24" y2="11.5"/>
+                <line x1="24" y1="36.5" x2="24" y2="39.5"/>
+                <line x1="8.5" y1="24" x2="11.5" y2="24"/>
+                <line x1="36.5" y1="24" x2="39.5" y2="24"/>
+            </g>
+            <polygon points="24,12 27,24 24,23 21,24" fill="#DC2626"/>
+            <polygon points="24,36 27,24 24,25 21,24" fill="#1F2937"/>
+            <circle cx="24" cy="24" r="2.2" fill="#C8962E"/>
+        </svg>
         <span class="header-pusula">PUSULA</span>
     </div>
     <div class="header-right">
@@ -387,28 +432,46 @@
     <!-- KPI Cards -->
     <div class="kpi-grid">
         <div class="kpi-card" onclick="filterByStatus('')" id="kpi-toplam">
-            <div class="kpi-label">Toplam Firma</div>
-            <div class="kpi-value" id="kv-toplam">—</div>
+            <div class="kpi-icon" style="background:#DBEAFE;color:#1D4ED8;">👥</div>
+            <div class="kpi-text">
+                <div class="kpi-label">Toplam Firma</div>
+                <div class="kpi-value" id="kv-toplam">—</div>
+            </div>
         </div>
         <div class="kpi-card" onclick="filterByStatus('yeni')">
-            <div class="kpi-label">Yeni</div>
-            <div class="kpi-value" id="kv-yeni" style="color:#1D4ED8">—</div>
+            <div class="kpi-icon" style="background:#DBEAFE;color:#1D4ED8;">👤</div>
+            <div class="kpi-text">
+                <div class="kpi-label">Yeni</div>
+                <div class="kpi-value" id="kv-yeni" style="color:#1D4ED8">—</div>
+            </div>
         </div>
         <div class="kpi-card" onclick="filterByStatus('iletisim_kuruldu')">
-            <div class="kpi-label">İletişim Kuruldu</div>
-            <div class="kpi-value" id="kv-iletisim" style="color:#92400E">—</div>
+            <div class="kpi-icon" style="background:#FFEDD5;color:#C2410C;">📞</div>
+            <div class="kpi-text">
+                <div class="kpi-label">İletişim Kuruldu</div>
+                <div class="kpi-value" id="kv-iletisim" style="color:#92400E">—</div>
+            </div>
         </div>
         <div class="kpi-card" onclick="filterByStatus('ilgili')">
-            <div class="kpi-label">İlgili</div>
-            <div class="kpi-value" id="kv-ilgili" style="color:#065F46">—</div>
+            <div class="kpi-icon" style="background:#D1FAE5;color:#059669;">⭐</div>
+            <div class="kpi-text">
+                <div class="kpi-label">İlgili</div>
+                <div class="kpi-value" id="kv-ilgili" style="color:#065F46">—</div>
+            </div>
         </div>
         <div class="kpi-card" onclick="filterByStatus('evrak_bekleniyor')">
-            <div class="kpi-label">Evrak / Findeks</div>
-            <div class="kpi-value" id="kv-evrak" style="color:#9A3412">—</div>
+            <div class="kpi-icon" style="background:#EDE9FE;color:#6D28D9;">📁</div>
+            <div class="kpi-text">
+                <div class="kpi-label">Evrak / Findeks</div>
+                <div class="kpi-value" id="kv-evrak" style="color:#9A3412">—</div>
+            </div>
         </div>
         <div class="kpi-card" onclick="filterByStatus('cari_acildi')">
-            <div class="kpi-label">Cari Açıldı</div>
-            <div class="kpi-value" id="kv-cari" style="color:#059669">—</div>
+            <div class="kpi-icon" style="background:#CCFBF1;color:#0F766E;">🏢</div>
+            <div class="kpi-text">
+                <div class="kpi-label">Cari Açıldı</div>
+                <div class="kpi-value" id="kv-cari" style="color:#059669">—</div>
+            </div>
         </div>
     </div>
 
