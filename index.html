@@ -431,7 +431,10 @@
                 letter-spacing: 0.4px;
                 color: var(--text-light);
                 flex-shrink: 0;
+                white-space: nowrap;
             }
+            tbody tr td { text-align: right; }
+            tbody tr td .td-light, tbody tr td .td-sub { text-align: right; word-break: break-word; }
             tbody tr td[data-label="Firma Adı"] { flex-direction: column; align-items: flex-start; gap: 2px; }
             tbody tr td[data-label="Firma Adı"]::before { margin-bottom: 2px; }
             .td-firma { font-size: 14px; }
@@ -579,6 +582,7 @@
                 <tr>
                     <th>#</th>
                     <th>Firma Adı</th>
+                    <th>İl</th>
                     <th>İlçe / Sanayi</th>
                     <th>Telefon</th>
                     <th>E-posta</th>
@@ -943,6 +947,7 @@ function renderTable(leads) {
                 <div class="td-firma">${l.firma_adi||'—'}${l.adres ? `<span class="nav-pin-btn" title="Yol Tarifi Aç" onclick="openNavigation('${l.id}', event)">📍</span>` : ''}</div>
                 ${l.yetkili_kisi ? `<div class="td-sub">${l.yetkili_kisi}</div>` : ''}
             </td>
+            <td class="td-light" data-label="İl">${l.il||'—'}</td>
             <td data-label="İlçe / Sanayi">
                 <div class="td-light">${l.ilce||'—'}</div>
                 ${l.sanayi_sitesi ? `<div class="td-sub">${l.sanayi_sitesi}</div>` : ''}
